@@ -21,7 +21,7 @@ header = {
 
 
 def create_log(msg):
-    f = open(os.path.join(os.path.dirname("__file__"), "log.txt"), 'w+')
+    f = open("rebalance-log.txt", 'w+')
     f.write(msg + "\n")
     f.close()
 
