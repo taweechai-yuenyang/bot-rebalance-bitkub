@@ -73,7 +73,7 @@ def buy(symbol, amount, rate):
         'sym': f'THB_{symbol}',
         'amt': amount,  # THB amount you want to spend
         'rat': rate,
-        'typ': 'market',  # market or limit
+        'typ': 'limit',  # market or limit
         'ts': ts,
     }
 
