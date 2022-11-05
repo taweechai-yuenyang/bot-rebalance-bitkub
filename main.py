@@ -49,6 +49,9 @@ def get_price(symbol):
     if response.status_code == 200:
         obj = response.json()
         if len(obj) > 0:
+            # last ราคาล่าสุด
+            # highestBid รายคาซื้อ
+            # lowestAsk ราคาขาย
             lastPrice = [
                 float(obj[pair]["last"]),
                 float(obj[pair]["highestBid"]),
@@ -172,7 +175,7 @@ def main():
         for s in sym:
             if float(data[s]['available']) == 0:
                 baseTotal = divided
-                
+
             check_balance(s, data, baseTotal, divided)
 
 
