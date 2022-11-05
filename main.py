@@ -148,7 +148,6 @@ def check_order_hold(symbol):
     response = requests.post(f'{API_HOST}/api/market/my-open-orders',
                              headers=header, data=json_encode(data))
     obj = response.json()
-    print('Sell Response: ' + response.text)
     if len(obj["result"]) > 0:
         return False
 
