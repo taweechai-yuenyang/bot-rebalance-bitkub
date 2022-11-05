@@ -19,11 +19,11 @@ header = {
     'X-BTK-APIKEY': API_KEY,
 }
 
+
 def create_log(msg):
     f = open(os.path.join(os.path.dirname("__file__"), "log.txt"), 'w+')
     f.write(msg + "\n")
     f.close()
-
 
 
 # encode
@@ -73,7 +73,7 @@ def buy(symbol, amount, rate):
         'sym': f'THB_{symbol}',
         'amt': amount,  # THB amount you want to spend
         'rat': rate,
-        'typ': 'market',# market or limit
+        'typ': 'market',  # market or limit
         'ts': ts,
     }
 
@@ -83,17 +83,17 @@ def buy(symbol, amount, rate):
     # print('Payload with signature: ' + json_encode(data))
     response = requests.post(f'{API_HOST}/api/market/place-bid',
                              headers=header, data=json_encode(data))
-    
+
     obj = response.json()["result"]
-    id = obj["id"]# "id": 1, // order id
-    hash = obj["hash"]# "hash": "fwQ6dnQWQPs4cbatFGc9LPnpqyu", // order hash
-    typ = obj["typ"]# "typ": "limit", // order type
-    amt = obj["amt"]# "amt": 1.00000000, // selling amount
-    rat = obj["rat"]# "rat": 15000, // rate
-    fee = obj["fee"]# "fee": 37.5, // fee
-    cre = obj["cre"]# "cre": 37.5, // fee credit used
-    rec = obj["rec"]# "rec": 15000, // amount to receive
-    ts = obj["ts"]# "ts": 1533834844 // timestamp
+    id = obj["id"]  # "id": 1, // order id
+    hash = obj["hash"]  # "hash": "fwQ6dnQWQPs4cbatFGc9LPnpqyu", // order hash
+    typ = obj["typ"]  # "typ": "limit", // order type
+    amt = obj["amt"]  # "amt": 1.00000000, // selling amount
+    rat = obj["rat"]  # "rat": 15000, // rate
+    fee = obj["fee"]  # "fee": 37.5, // fee
+    cre = obj["cre"]  # "cre": 37.5, // fee credit used
+    rec = obj["rec"]  # "rec": 15000, // amount to receive
+    ts = obj["ts"]  # "ts": 1533834844 // timestamp
     msg = f"Buy id: {id} hash: {hash} typ: {typ} amt: {amt} rat: {rat} fee: {fee} cre: {cre} rec: {rec} ts: {ts}"
     create_log(msg)
 
@@ -117,17 +117,17 @@ def sell(symbol, amount, rate):
     # print('Payload with signature: ' + json_encode(data))
     response = requests.post(f'{API_HOST}/api/market/place-ask',
                              headers=header, data=json_encode(data))
-    
+
     obj = response.json()["result"]
-    id = obj["id"]# "id": 1, // order id
-    hash = obj["hash"]# "hash": "fwQ6dnQWQPs4cbatFGc9LPnpqyu", // order hash
-    typ = obj["typ"]# "typ": "limit", // order type
-    amt = obj["amt"]# "amt": 1.00000000, // selling amount
-    rat = obj["rat"]# "rat": 15000, // rate
-    fee = obj["fee"]# "fee": 37.5, // fee
-    cre = obj["cre"]# "cre": 37.5, // fee credit used
-    rec = obj["rec"]# "rec": 15000, // amount to receive
-    ts = obj["ts"]# "ts": 1533834844 // timestamp
+    id = obj["id"]  # "id": 1, // order id
+    hash = obj["hash"]  # "hash": "fwQ6dnQWQPs4cbatFGc9LPnpqyu", // order hash
+    typ = obj["typ"]  # "typ": "limit", // order type
+    amt = obj["amt"]  # "amt": 1.00000000, // selling amount
+    rat = obj["rat"]  # "rat": 15000, // rate
+    fee = obj["fee"]  # "fee": 37.5, // fee
+    cre = obj["cre"]  # "cre": 37.5, // fee credit used
+    rec = obj["rec"]  # "rec": 15000, // amount to receive
+    ts = obj["ts"]  # "ts": 1533834844 // timestamp
     msg = f"Sell id: {id} hash: {hash} typ: {typ} amt: {amt} rat: {rat} fee: {fee} cre: {cre} rec: {rec} ts: {ts}"
     create_log(msg)
     print('Sell Response: ' + response.text)
@@ -171,10 +171,10 @@ def check_balance():
     data = response.json()
     data = data['result']
 
-    ### Start Bot
+    # Start Bot
     percentDivided = 0
     isOpenOrSell = "Order Hold"
-    sym = ['BAND']
+    sym = ['MATIC']
     # Check Order Hold
     isHold = False
     for s in sym:
@@ -203,7 +203,7 @@ def check_balance():
 
             print('{} คงเหลือ: {} ราคาล่าสุด: {} ราคาซื้อ: {} ราคาขาย: {} ส่วนต่างจากต้นทุน: {}% สถานะ: {}'.format(
                 s, round((price*lastPrice[0]), 2), lastPrice[0], lastPrice[1], lastPrice[2], percentDivided, isOpenOrSell))
-    
+
     return isOpenOrSell
 
 
