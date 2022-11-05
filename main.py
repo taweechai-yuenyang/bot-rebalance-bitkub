@@ -173,9 +173,9 @@ def check_balance():
 
     # Start Bot
     percentDivided = 0
-    isOpenOrSell = "Order Hold"
     sym = ['MATIC']
     # Check Order Hold
+    isOpenOrSell = f"Hold {str(sym)}"
     isHold = False
     for s in sym:
         isHold = check_order_hold(s)
