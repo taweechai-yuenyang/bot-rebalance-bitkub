@@ -19,6 +19,12 @@ header = {
     'X-BTK-APIKEY': API_KEY,
 }
 
+def create_log(msg):
+    f = open(os.path.join(os.path.dirname("__file__"), "log.txt"), 'w+')
+    f.write(msg + "\n")
+    f.close()
+
+
 
 # encode
 def json_encode(data):
@@ -35,7 +41,7 @@ def sign(data):
 
 # check server time
 def server_time():
-    response = requests.get(API_HOST + '/api/servertime')
+    response = requests.get(f'{API_HOST}/api/servertime')
     ts = int(response.text)
     #print('Server time: ' + response.text)
     return ts
@@ -67,7 +73,7 @@ def buy(symbol, amount, rate):
         'sym': f'THB_{symbol}',
         'amt': amount,  # THB amount you want to spend
         'rat': rate,
-        'typ': 'limit',
+        'typ': 'market',# market or limit
         'ts': ts,
     }
 
@@ -77,6 +83,20 @@ def buy(symbol, amount, rate):
     # print('Payload with signature: ' + json_encode(data))
     response = requests.post(f'{API_HOST}/api/market/place-bid',
                              headers=header, data=json_encode(data))
+    
+    obj = response.json()["result"]
+    id = obj["id"]# "id": 1, // order id
+    hash = obj["hash"]# "hash": "fwQ6dnQWQPs4cbatFGc9LPnpqyu", // order hash
+    typ = obj["typ"]# "typ": "limit", // order type
+    amt = obj["amt"]# "amt": 1.00000000, // selling amount
+    rat = obj["rat"]# "rat": 15000, // rate
+    fee = obj["fee"]# "fee": 37.5, // fee
+    cre = obj["cre"]# "cre": 37.5, // fee credit used
+    rec = obj["rec"]# "rec": 15000, // amount to receive
+    ts = obj["ts"]# "ts": 1533834844 // timestamp
+    msg = f"Buy id: {id} hash: {hash} typ: {typ} amt: {amt} rat: {rat} fee: {fee} cre: {cre} rec: {rec} ts: {ts}"
+    create_log(msg)
+
     print('Buy Response: ' + response.text)
     return response.status_code
 
@@ -87,7 +107,7 @@ def sell(symbol, amount, rate):
         'sym': f'THB_{symbol}',
         'amt': amount,  # THB amount you want to spend
         'rat': rate,
-        'typ': 'limit',
+        'typ': 'limit',  # market or limit
         'ts': ts,
     }
 
@@ -97,8 +117,22 @@ def sell(symbol, amount, rate):
     # print('Payload with signature: ' + json_encode(data))
     response = requests.post(f'{API_HOST}/api/market/place-ask',
                              headers=header, data=json_encode(data))
+    
+    obj = response.json()["result"]
+    id = obj["id"]# "id": 1, // order id
+    hash = obj["hash"]# "hash": "fwQ6dnQWQPs4cbatFGc9LPnpqyu", // order hash
+    typ = obj["typ"]# "typ": "limit", // order type
+    amt = obj["amt"]# "amt": 1.00000000, // selling amount
+    rat = obj["rat"]# "rat": 15000, // rate
+    fee = obj["fee"]# "fee": 37.5, // fee
+    cre = obj["cre"]# "cre": 37.5, // fee credit used
+    rec = obj["rec"]# "rec": 15000, // amount to receive
+    ts = obj["ts"]# "ts": 1533834844 // timestamp
+    msg = f"Sell id: {id} hash: {hash} typ: {typ} amt: {amt} rat: {rat} fee: {fee} cre: {cre} rec: {rec} ts: {ts}"
+    create_log(msg)
     print('Sell Response: ' + response.text)
     return response.status_code
+
 
 def check_order_hold(symbol):
     ts = server_time()
@@ -117,35 +151,11 @@ def check_order_hold(symbol):
     print('Sell Response: ' + response.text)
     if len(obj["result"]) > 0:
         return False
-    
+
     return True
 
 
-def check_balance(s, data, baseTotal, divided):
-    lastPrice = get_price(s)
-    price = float(data[s]['available'])
-    if price > 0:
-        price = price*lastPrice[0]
-    percentDivided = round(((price-baseTotal)*100/baseTotal), 2)
-
-    isOpenOrSell = "-"
-    if price == 0:
-        isCode = buy(s, divided, lastPrice[1])
-        print(f"Open Order {s} is: {isCode}")
-        isOpenOrSell = "Buy"
-
-    if percentDivided > 1:
-        isCode = sell(s, float(data[s]['available']), lastPrice[2])
-        print(f"Sell Order {s} is: {isCode}")
-        isOpenOrSell = "Sell"
-
-    print('{} คงเหลือ: {} ราคาล่าสุด: {} ราคาซื้อ: {} ราคาขาย: {} ส่วนต่างจากต้นทุน: {}%'.format(
-        s, round(price, 2), lastPrice[0], lastPrice[1], lastPrice[2], percentDivided))
-
-    return isOpenOrSell
-
-
-def main():
+def check_balance():
     ts = server_time()
     data = {
         'ts': ts,
@@ -155,15 +165,17 @@ def main():
     data['sig'] = signature
 
     #print('Payload with signature: ' + json_encode(data))
-    response = requests.post(API_HOST + '/api/market/balances',
+    response = requests.post(f'{API_HOST}/api/market/balances',
                              headers=header, data=json_encode(data))
 
-    #print('Balances: ' + response.text)
     data = response.json()
     data = data['result']
 
-    sym = ['JFIN']
-    ### Check Order Hold
+    ### Start Bot
+    percentDivided = 0
+    isOpenOrSell = "Order Hold"
+    sym = ['BAND']
+    # Check Order Hold
     isHold = False
     for s in sym:
         isHold = check_order_hold(s)
@@ -173,10 +185,34 @@ def main():
         print('THB คงเหลือ: {}'.format(baseTotal))
         divided = baseTotal/(len(sym) + 1)
         for s in sym:
-            if float(data[s]['available']) == 0:
-                baseTotal = divided
+            lastPrice = get_price(s)
+            price = float(data[s]['available'])
+            if price == 0:
+                isCode = buy(s, divided, lastPrice[1])
+                print(f"Open Order {s} is: {isCode}")
+                isOpenOrSell = "Buy"
 
-            check_balance(s, data, baseTotal, divided)
+            else:
+                percentDivided = round(
+                    (((price*lastPrice[0])-baseTotal)*100/baseTotal), 2)
+                if percentDivided >= 3 or percentDivided <= -3:
+                    # sell
+                    isCode = sell(s, float(data[s]['available']), lastPrice[2])
+                    print(f"Sell Order {s} is: {isCode}")
+                    isOpenOrSell = "Sell"
+
+            print('{} คงเหลือ: {} ราคาล่าสุด: {} ราคาซื้อ: {} ราคาขาย: {} ส่วนต่างจากต้นทุน: {}% สถานะ: {}'.format(
+                s, round((price*lastPrice[0]), 2), lastPrice[0], lastPrice[1], lastPrice[2], percentDivided, isOpenOrSell))
+    
+    return isOpenOrSell
+
+
+def main():
+    txtStatus = check_balance()
+    if txtStatus == "Sell":
+        check_balance()
+
+    print(f"Order Is: {txtStatus}")
 
 
 if __name__ == '__main__':
