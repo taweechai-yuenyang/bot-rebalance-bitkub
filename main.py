@@ -221,7 +221,7 @@ def main():
         else:
             # if baseTotal >= cost:
             #     costDivided = int(baseTotal)/len(sym)
-            costDivided = int(baseTotal)/len(sym)
+            costDivided = costDivided = cost/len(sym)
 
         # ตรวจสอบ Asset
         if int(assetPrice) == 0:
