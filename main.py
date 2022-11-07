@@ -21,8 +21,8 @@ header = {
 
 
 def create_log(msg):
-    f = open("rebalance-log.txt", 'w+')
-    f.write(msg + "\n")
+    f = open("rebalance-log.txt", 'a')
+    f.write(msg)
     f.close()
 
 
