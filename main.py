@@ -215,7 +215,7 @@ def main():
         assetAskPrice = fetchPrice[2]
 
         costDivided = int(baseTotal)
-        if costDivided == 0:
+        if costDivided <= (cost/len(sym)):
             costDivided = cost/len(sym)
 
         else:
@@ -235,8 +235,7 @@ def main():
                 create_log(msg)
 
         else:
-            percentDivided = round(
-                (((assetPrice-costDivided)*100)/costDivided), 2)
+            percentDivided = round(((assetPrice-costDivided)*100)/costDivided, 2)
             print(f"{symbol} Asset: {baseAsset} Price: {assetPrice} Profit: {(assetPrice-costDivided)} Percent: {percentDivided}%")
             if percentDivided > 5 and percentDivided < -3:
                 isHold = check_order_hold(symbol)
