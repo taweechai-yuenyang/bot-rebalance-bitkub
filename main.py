@@ -133,11 +133,13 @@ def sell(symbol, amount, rate):
     print('Sell Response: ' + response.text)
     return response.status_code
 
-
-def check_order_hold(symbol):
+def cancel(symbol,order_id,sd,txt_hash):
     ts = server_time()
     data = {
         'sym': f'THB_{symbol}',
+        'id': order_id,
+        'sd': sd,
+        'hash': txt_hash,
         'ts': ts,
     }
 
@@ -145,13 +147,37 @@ def check_order_hold(symbol):
     data['sig'] = signature
 
     # print('Payload with signature: ' + json_encode(data))
-    response = requests.post(f'{API_HOST}/api/market/my-open-orders',
+    response = requests.post(f'{API_HOST}/api/market/cancel-order',
                              headers=header, data=json_encode(data))
-    obj = response.json()
-    if len(obj["result"]) > 0:
-        return False
+    # obj = response.json()
 
-    return True
+    return response.status_code
+
+
+def check_order_hold(symbol):
+    try:
+        ts = server_time()
+        data = {
+            'sym': f'THB_{symbol}',
+            'ts': ts,
+        }
+
+        signature = sign(data)
+        data['sig'] = signature
+
+        # print('Payload with signature: ' + json_encode(data))
+        response = requests.post(f'{API_HOST}/api/market/my-open-orders',
+                                headers=header, data=json_encode(data))
+        obj = response.json()
+        if len(obj["result"]) > 0:
+            cancel(symbol, obj["result"]["id"], obj["result"]["side"], obj["result"]["hash"])
+
+        return True
+
+    except Exception as e:
+        pass
+
+    return False
 
 
 def check_balance():
