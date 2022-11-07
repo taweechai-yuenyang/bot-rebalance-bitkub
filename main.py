@@ -227,7 +227,7 @@ def main():
             # ตรวจสอบรายการ Hold
             isHold = check_order_hold(symbol)
             if len(isHold) == 0:
-                isStatus = buy(symbol, costDivided, assetBidPrice)
+                isStatus = buy(symbol, costDivided, assetBidPrice, market='market')
                 print(f"Open Order {symbol} Status: {isStatus}")
 
             else:
