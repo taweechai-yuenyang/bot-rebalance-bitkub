@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import hashlib
 import hmac
@@ -21,9 +22,11 @@ header = {
 
 
 def create_log(msg):
-    f = open("rebalance-log.txt", 'a')
-    f.write(msg)
-    f.close()
+    with open("rebalance-log.txt", "a") as f:
+        # Append 'hello' at the end of file
+        d = datetime.now()
+        f.write(f"{d.strftime('%Y-%m-%d %H:%M:%S')} {msg}\n")
+        f.close()
 
 
 # encode
@@ -67,48 +70,50 @@ def get_price(symbol):
     return lastPrice
 
 
-def buy(symbol, amount, rate):
-    ts = server_time()
+def buy(symbol, amount, rate, market='limit'):
+    if amount > 50:
+        data = {
+            'sym': f'THB_{symbol}',
+            'amt': amount,  # THB amount you want to spend
+            'rat': rate,
+            'typ': market,  # market or limit
+            'ts': server_time(),
+        }
+
+        signature = sign(data)
+        data['sig'] = signature
+
+        # print('Payload with signature: ' + json_encode(data))
+        response = requests.post(f'{API_HOST}/api/market/place-bid',
+                                 headers=header, data=json_encode(data))
+
+        obj = response.json()["result"]
+        id = obj["id"]  # "id": 1, // order id
+        # "hash": "fwQ6dnQWQPs4cbatFGc9LPnpqyu", // order hash
+        hash = obj["hash"]
+        typ = obj["typ"]  # "typ": "limit", // order type
+        amt = obj["amt"]  # "amt": 1.00000000, // selling amount
+        rat = obj["rat"]  # "rat": 15000, // rate
+        fee = obj["fee"]  # "fee": 37.5, // fee
+        cre = obj["cre"]  # "cre": 37.5, // fee credit used
+        rec = obj["rec"]  # "rec": 15000, // amount to receive
+        ts = obj["ts"]  # "ts": 1533834844 // timestamp
+        msg = f"Buy id: {id} hash: {hash} typ: {typ} amt: {amt} rat: {rat} fee: {fee}"
+        create_log(msg)
+
+        print('Buy Response: ' + response.text)
+        return response.status_code
+
+    return 500
+
+
+def sell(symbol, amount, rate, market='limit'):
     data = {
         'sym': f'THB_{symbol}',
         'amt': amount,  # THB amount you want to spend
         'rat': rate,
-        'typ': 'limit',  # market or limit
-        'ts': ts,
-    }
-
-    signature = sign(data)
-    data['sig'] = signature
-
-    # print('Payload with signature: ' + json_encode(data))
-    response = requests.post(f'{API_HOST}/api/market/place-bid',
-                             headers=header, data=json_encode(data))
-
-    obj = response.json()["result"]
-    id = obj["id"]  # "id": 1, // order id
-    hash = obj["hash"]  # "hash": "fwQ6dnQWQPs4cbatFGc9LPnpqyu", // order hash
-    typ = obj["typ"]  # "typ": "limit", // order type
-    amt = obj["amt"]  # "amt": 1.00000000, // selling amount
-    rat = obj["rat"]  # "rat": 15000, // rate
-    fee = obj["fee"]  # "fee": 37.5, // fee
-    cre = obj["cre"]  # "cre": 37.5, // fee credit used
-    rec = obj["rec"]  # "rec": 15000, // amount to receive
-    ts = obj["ts"]  # "ts": 1533834844 // timestamp
-    msg = f"Buy id: {id} hash: {hash} typ: {typ} amt: {amt} rat: {rat} fee: {fee} cre: {cre} rec: {rec} ts: {ts}"
-    create_log(msg)
-
-    print('Buy Response: ' + response.text)
-    return response.status_code
-
-
-def sell(symbol, amount, rate):
-    ts = server_time()
-    data = {
-        'sym': f'THB_{symbol}',
-        'amt': amount,  # THB amount you want to spend
-        'rat': rate,
-        'typ': 'limit',  # market or limit
-        'ts': ts,
+        'typ': market,  # market or limit
+        'ts': server_time(),
     }
 
     signature = sign(data)
@@ -128,19 +133,19 @@ def sell(symbol, amount, rate):
     cre = obj["cre"]  # "cre": 37.5, // fee credit used
     rec = obj["rec"]  # "rec": 15000, // amount to receive
     ts = obj["ts"]  # "ts": 1533834844 // timestamp
-    msg = f"Sell id: {id} hash: {hash} typ: {typ} amt: {amt} rat: {rat} fee: {fee} cre: {cre} rec: {rec} ts: {ts}"
+    msg = f"Sell id: {id} hash: {hash} typ: {typ} amt: {amt} rat: {rat} fee: {fee}"
     create_log(msg)
     print('Sell Response: ' + response.text)
     return response.status_code
 
-def cancel(symbol,order_id,sd,txt_hash):
-    ts = server_time()
+
+def cancel(symbol, order_id, sd, txt_hash):
     data = {
         'sym': f'THB_{symbol}',
         'id': order_id,
         'sd': sd,
         'hash': txt_hash,
-        'ts': ts,
+        'ts': server_time(),
     }
 
     signature = sign(data)
@@ -150,16 +155,16 @@ def cancel(symbol,order_id,sd,txt_hash):
     response = requests.post(f'{API_HOST}/api/market/cancel-order',
                              headers=header, data=json_encode(data))
     # obj = response.json()
-
+    msg = f"Cancel id: {id} hash: {hash} sts: {response.status_code}"
+    create_log(msg)
     return response.status_code
 
 
 def check_order_hold(symbol):
     try:
-        ts = server_time()
         data = {
             'sym': f'THB_{symbol}',
-            'ts': ts,
+            'ts': server_time(),
         }
 
         signature = sign(data)
@@ -167,77 +172,79 @@ def check_order_hold(symbol):
 
         # print('Payload with signature: ' + json_encode(data))
         response = requests.post(f'{API_HOST}/api/market/my-open-orders',
-                                headers=header, data=json_encode(data))
-        obj = response.json()
-        if len(obj["result"]) > 0:
-            cancel(symbol, obj["result"]["id"], obj["result"]["side"], obj["result"]["hash"])
-
-        return True
+                                 headers=header, data=json_encode(data))
+        return response.json()["result"]
 
     except Exception as e:
         pass
 
-    return False
+    return []
 
 
-def check_balance():
-    ts = server_time()
+def fetch_balance():
     data = {
-        'ts': ts,
+        'ts': server_time(),
     }
-
     signature = sign(data)
     data['sig'] = signature
-
     #print('Payload with signature: ' + json_encode(data))
     response = requests.post(f'{API_HOST}/api/market/balances',
                              headers=header, data=json_encode(data))
-
     data = response.json()
     data = data['result']
-
-    # Start Bot
-    percentDivided = 0
-    sym = ['MATIC']
-    # Check Order Hold
-    isOpenOrSell = f"Hold {str(sym)}"
-    isHold = False
-    for s in sym:
-        isHold = check_order_hold(s)
-
-    if isHold:
-        baseTotal = float(data["THB"]['available'])
-        print('THB คงเหลือ: {}'.format(baseTotal))
-        divided = baseTotal/(len(sym) + 1)
-        for s in sym:
-            lastPrice = get_price(s)
-            price = float(data[s]['available'])
-            if price == 0:
-                isCode = buy(s, divided, lastPrice[1])
-                print(f"Open Order {s} is: {isCode}")
-                isOpenOrSell = "Buy"
-
-            else:
-                percentDivided = round(
-                    (((price*lastPrice[0])-baseTotal)*100/baseTotal), 2)
-                if percentDivided >= 5 or percentDivided <= -3:
-                    # sell
-                    isCode = sell(s, float(data[s]['available']), lastPrice[2])
-                    print(f"Sell Order {s} is: {isCode}")
-                    isOpenOrSell = "Sell"
-
-            print('{} คงเหลือ: {} ราคาล่าสุด: {} ราคาซื้อ: {} ราคาขาย: {} ส่วนต่างจากต้นทุน: {}% สถานะ: {}'.format(
-                s, round((price*lastPrice[0]), 2), lastPrice[0], lastPrice[1], lastPrice[2], percentDivided, isOpenOrSell))
-
-    return isOpenOrSell
+    return data
 
 
 def main():
-    txtStatus = check_balance()
-    if txtStatus == "Sell":
-        check_balance()
+    sym = ['XRP', 'DOGE']
+    data = fetch_balance()
+    # Start Bot
+    cost = 300
+    baseTotal = 0  # float(data["THB"]['available'])
+    for s in sym:
+        fetchPrice = get_price(s)
+        baseTotal += (float(fetchPrice[0]) * float(data[s]['available']))
 
-    print(f"Order Is: {txtStatus}")
+    for i in range(0, len(sym)):
+        symbol = sym[i]
+        fetchPrice = get_price(symbol)
+        baseAsset = float(data[symbol]['available'])
+        assetPrice = fetchPrice[0] * baseAsset
+        assetBidPrice = fetchPrice[1]
+        assetAskPrice = fetchPrice[2]
+
+        costDivided = int(baseTotal)
+        if costDivided == 0:
+            costDivided = cost/len(sym)
+
+        else:
+            if baseTotal >= cost:
+                costDivided = int(baseTotal)/len(sym)
+
+        # ตรวจสอบ Asset
+        if int(assetPrice) == 0:
+            # ตรวจสอบรายการ Hold
+            isHold = check_order_hold(symbol)
+            if len(isHold) == 0:
+                isStatus = buy(symbol, costDivided, assetBidPrice)
+                print(f"Open Order {symbol} Status: {isStatus}")
+
+            else:
+                msg = f"Hold {isHold[0]['side']} Order {symbol} ID: {isHold[0]['id']}"
+                create_log(msg)
+
+        else:
+            percentDivided = round(
+                (((assetPrice-costDivided)*100)/costDivided), 2)
+            print(f"{symbol} Asset: {baseAsset} Price: {assetPrice} Profit: {(assetPrice-costDivided)} Percent: {percentDivided}%")
+            if percentDivided > 4 and percentDivided < -3:
+                isHold = check_order_hold(symbol)
+                if len(isHold) == 0:
+                    isStatus = sell(symbol, baseAsset, assetAskPrice)
+                    print(f"Sell Order {symbol} Status: {isStatus}")
+                else:
+                    msg = f"Hold {isHold[0]['side']} Order {symbol} ID: {isHold[0]['id']}"
+                    create_log(msg)
 
 
 if __name__ == '__main__':
