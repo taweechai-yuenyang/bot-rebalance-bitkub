@@ -215,12 +215,13 @@ def main():
         assetAskPrice = fetchPrice[2]
 
         costDivided = int(baseTotal)
-        if costDivided <= (cost/len(sym)):
+        if costDivided == 0:
             costDivided = cost/len(sym)
 
         else:
-            if baseTotal >= cost:
-                costDivided = int(baseTotal)/len(sym)
+            # if baseTotal >= cost:
+            #     costDivided = int(baseTotal)/len(sym)
+            costDivided = int(baseTotal)/len(sym)
 
         # ตรวจสอบ Asset
         if int(assetPrice) == 0:
@@ -236,8 +237,8 @@ def main():
 
         else:
             percentDivided = round(((assetPrice-costDivided)*100)/costDivided, 2)
-            print(f"{symbol} Asset: {baseAsset} Price: {assetPrice} Profit: {(assetPrice-costDivided)} Percent: {percentDivided}%")
-            if percentDivided > 5 and percentDivided < -3:
+            print(f"{symbol} Asset: {baseAsset} Price: {assetPrice} Profit: {round((assetPrice-costDivided), 2)} Percent: {percentDivided}%")
+            if percentDivided > 5 or percentDivided < -3:
                 isHold = check_order_hold(symbol)
                 if len(isHold) == 0:
                     isStatus = sell(symbol, baseAsset, assetAskPrice)
