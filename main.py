@@ -197,7 +197,7 @@ def fetch_balance():
 
 
 def main():
-    sym = ['XRP', 'DOGE']
+    sym = ['XRP', 'TRX']
     data = fetch_balance()
     # Start Bot
     cost = 300
