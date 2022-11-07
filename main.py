@@ -23,7 +23,7 @@ header = {
 
 def create_log(msg):
     d = datetime.now()
-    fileName = f"rebalance-{d.strftime('%Y-%m-%d')}-log.txt"
+    fileName = f"rebalance/logs/{d.strftime('%Y-%m-%d')}-log.txt"
     with open(fileName, "a") as f:
         # Append 'hello' at the end of file
         f.write(f"{d.strftime('%Y-%m-%d %H:%M:%S')} {msg}\n")
