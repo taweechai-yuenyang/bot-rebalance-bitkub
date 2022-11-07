@@ -194,7 +194,7 @@ def check_balance():
             else:
                 percentDivided = round(
                     (((price*lastPrice[0])-baseTotal)*100/baseTotal), 2)
-                if percentDivided >= 3 or percentDivided <= -3:
+                if percentDivided >= 5 or percentDivided <= -3:
                     # sell
                     isCode = sell(s, float(data[s]['available']), lastPrice[2])
                     print(f"Sell Order {s} is: {isCode}")
