@@ -238,7 +238,7 @@ def main():
             percentDivided = round(
                 (((assetPrice-costDivided)*100)/costDivided), 2)
             print(f"{symbol} Asset: {baseAsset} Price: {assetPrice} Profit: {(assetPrice-costDivided)} Percent: {percentDivided}%")
-            if percentDivided > 4 and percentDivided < -3:
+            if percentDivided > 5 and percentDivided < -3:
                 isHold = check_order_hold(symbol)
                 if len(isHold) == 0:
                     isStatus = sell(symbol, baseAsset, assetAskPrice)
