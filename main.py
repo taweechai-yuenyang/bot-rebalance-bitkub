@@ -7,7 +7,7 @@ import sys
 import requests
 
 from dotenv import load_dotenv
-load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env.local"))
 
 API_HOST = "https://api.bitkub.com"
 API_KEY = os.getenv("API_KEY")
