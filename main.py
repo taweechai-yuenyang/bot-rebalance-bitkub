@@ -7,7 +7,7 @@ import sys
 import requests
 
 from dotenv import load_dotenv
-load_dotenv(os.path.join(os.path.dirname(__file__), ".env.local"))
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 API_HOST = "https://api.bitkub.com"
 API_KEY = os.getenv("API_KEY")
@@ -23,7 +23,8 @@ header = {
 
 def create_log(msg):
     d = datetime.now()
-    fileName = os.path.join(os.path.dirname(__file__),f"logs/{d.strftime('%Y-%m-%d')}-log.txt")
+    fileName = os.path.join(os.path.dirname(__file__),
+                            f"logs/{d.strftime('%Y-%m-%d')}-log.txt")
     with open(fileName, "a") as f:
         # Append 'hello' at the end of file
         f.write(f"{d.strftime('%Y-%m-%d %H:%M:%S')} {msg}\n")
@@ -221,14 +222,17 @@ def main():
         else:
             # if baseTotal >= cost:
             #     costDivided = int(baseTotal)/len(sym)
-            costDivided = costDivided = cost/len(sym)
+            costDivided = cost/len(sym)
+            if float(data["THB"]['available']) < costDivided:
+                costDivided = float(data["THB"]['available'])
 
         # ตรวจสอบ Asset
         if int(assetPrice) == 0:
             # ตรวจสอบรายการ Hold
             isHold = check_order_hold(symbol)
             if len(isHold) == 0:
-                isStatus = buy(symbol, costDivided, assetBidPrice, market='market')
+                isStatus = buy(symbol, costDivided,
+                               assetBidPrice, market='market')
                 print(f"Open Order {symbol} Status: {isStatus}")
 
             else:
@@ -236,7 +240,8 @@ def main():
                 create_log(msg)
 
         else:
-            percentDivided = round(((assetPrice-costDivided)*100)/costDivided, 2)
+            percentDivided = round(
+                ((assetPrice-costDivided)*100)/costDivided, 2)
             print(f"{symbol} Asset: {baseAsset} Price: {assetPrice} Profit: {round((assetPrice-costDivided), 2)} Percent: {percentDivided}%")
             if percentDivided > 5 or percentDivided < -3:
                 isHold = check_order_hold(symbol)
